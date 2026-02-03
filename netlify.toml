@@ -1,0 +1,9 @@
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+# Opcional: ruta “bonita” /api/ask-bot en lugar del path interno
+[[redirects]]
+  from = "/api/ask-bot"
+  to = "/.netlify/functions/ask-bot"
+  status = 200
