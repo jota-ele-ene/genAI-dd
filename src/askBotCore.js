@@ -1,5 +1,14 @@
 // src/askBotCore.js
-import fetch from 'node-fetch';  // o global fetch si tu Node lo soporta
+// Al principio del fichero
+let fetchFn = globalThis.fetch;
+
+if (!fetchFn) {
+  // Entorno sin fetch (Node viejo, por ejemplo)
+  fetchFn = async (...args) => {
+    const { default: nodeFetch } = await import('node-fetch');
+    return nodeFetch(...args);
+  };
+}
 
 export async function askBot(question, { apiUrl, apiKey }) {
   if (!question || !question.trim()) {
@@ -22,7 +31,7 @@ export async function askBot(question, { apiUrl, apiKey }) {
     ],
   };
 
-  const response = await fetch(apiUrl, {
+  const response = await fetchFn(apiUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
