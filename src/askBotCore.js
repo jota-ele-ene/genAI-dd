@@ -29,7 +29,12 @@ export async function askBot(question, { apiUrl, apiKey }) {
         text: question,
       },
     ],
-  };
+  };  
+  
+  console.log('--- ask-bot function ---');
+  console.log('API URK:', apiUrl);
+  console.log('RAW BODY:', JSON.stringify(requestBody));
+
 
   const response = await fetchFn(apiUrl, {
     method: 'POST',
