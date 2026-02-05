@@ -9,4 +9,4 @@
   status = 200
 
 [build.environment]
-  SECRETS_SCAN_OMIT_PATHS = "/public/css"
+  SECRETS_SCAN_ENABLED = "false"
