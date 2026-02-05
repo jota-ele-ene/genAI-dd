@@ -1,5 +1,5 @@
 // src/askBotCore.js
-import fetch from 'node-fetch';
+import fetch from 'node-fetch';  // o global fetch si tu Node lo soporta
 
 export async function askBot(question, { apiUrl, apiKey }) {
   if (!question || !question.trim()) {
@@ -40,3 +40,5 @@ export async function askBot(question, { apiUrl, apiKey }) {
 
   return data;
 }
+
+
