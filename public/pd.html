@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat LLM Lab</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --blue-primary: #0055CC;
+      --blue-secondary: #007bff;
+      --background-light: #F0F2F5;
+      --text-primary: #1c1e21;
+      --text-secondary: #65676b;
+      --container-background: #FFFFFF;
+      --border-color: #ced4da;
+      --border-light: #e0e0e0;
+    }
+
+    html, body { height: 100%; }
+    body { background-color: var(--background-light); }
+
+    #root { height: 100%; }
+
+    .App{
+      display:flex;
+      flex-direction:column;
+      height:100vh;
+      background-color:var(--container-background);
+      font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,Fira Sans,Droid Sans,Helvetica Neue,sans-serif;
+      color:var(--text-primary);
+      overflow:hidden;
+    }
+
+    .chat-window{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      width:100%;
+      margin:0 auto;
+      background:var(--container-background);
+      overflow:hidden;
+    }
+
+    .messages-container{
+      flex:1;
+      overflow-y:auto;
+      padding:24px 20px;
+      background:var(--background-light);
+    }
+
+    .welcome-message{
+      text-align:center;
+      padding:40px 20px;
+      color:var(--text-secondary);
+    }
+
+    .welcome-message h2{
+      color:var(--text-primary);
+      margin-bottom:10px;
+      font-weight:600;
+    }
+
+    .message{
+      display:flex;
+      flex-direction:column;
+      margin-bottom:16px;
+      animation:fadeIn .3s ease;
+    }
+
+    .message-content{
+      padding:10px 14px;
+      border-radius:18px;
+      max-width:75%;
+      line-height:1.5;
+      word-wrap:break-word;
+    }
+
+    .message.user{
+      align-items:flex-end;
+    }
+
+    .message.user .message-content{
+      background:var(--blue-primary);
+      color:#fff;
+      border-radius:18px 18px 4px;
+    }
+
+    .message.bot{
+      align-items:flex-start;
+    }
+
+    .message.bot .message-content{
+      background:#e4e6eb;
+      color:var(--text-primary);
+      border-radius:18px 18px 18px 4px;
+    }
+
+    .message.user p{
+      margin:0;
+      white-space:pre-wrap;
+    }
+
+    .message.bot .message-content p{
+      margin:0 0 .5em;
+    }
+
+    .message.bot .message-content p:last-child{
+      margin-bottom:0;
+    }
+
+    .typing-indicator{
+      display:flex;
+      align-items:center;
+      gap:4px;
+      padding:10px 0;
+    }
+
+    .typing-indicator span{
+      width:8px;
+      height:8px;
+      background:var(--text-secondary);
+      border-radius:50%;
+      animation:typing-bounce 1.2s infinite ease-in-out;
+    }
+
+    .typing-indicator span:nth-child(2){animation-delay:-.2s}
+    .typing-indicator span:nth-child(3){animation-delay:-.4s}
+
+    .input-container{
+      display:flex;
+      padding:12px 20px;
+      background:var(--container-background);
+      border-top:1px solid var(--border-light);
+      gap:10px;
+    }
+
+    .input-container input{
+      flex:1;
+      padding:10px 16px;
+      border:1px solid var(--border-color);
+      border-radius:20px;
+      font-size:1rem;
+      outline:none;
+      transition:border-color .3s ease;
+      background-color:var(--background-light);
+    }
+
+    .input-container input:focus{
+      border-color:var(--blue-secondary);
+    }
+
+    .input-container input:disabled{
+      background:#e9ecef;
+      cursor:not-allowed;
+    }
+
+    .input-container button{
+      padding:10px 20px;
+      background:var(--blue-primary);
+      color:#fff;
+      border:none;
+      border-radius:20px;
+      font-size:1rem;
+      font-weight:600;
+      cursor:pointer;
+      transition:background-color .2s ease;
+      white-space:nowrap;
+    }
+
+    .input-container button:hover:not(:disabled){
+      background:#004099;
+    }
+
+    .input-container button:disabled{
+      background:#ccc;
+      cursor:not-allowed;
+    }
+
+    @keyframes fadeIn{
+      0%{opacity:0;transform:translateY(10px)}
+      to{opacity:1;transform:translateY(0)}
+    }
+
+    @keyframes typing-bounce{
+      0%,80%,to{transform:scale(0)}
+      40%{transform:scale(1)}
+    }
+
+    .messages-container::-webkit-scrollbar{width:8px}
+    .messages-container::-webkit-scrollbar-track{background:#f1f1f1}
+    .messages-container::-webkit-scrollbar-thumb{background:#c1c1c1;border-radius:4px}
+    .messages-container::-webkit-scrollbar-thumb:hover{background:#555}
+  </style>
+</head>
+<body>
+  <div id="root">
+    <div class="App">
+      <div class="chat-window">
+        <div class="messages-container" id="messages">
+          <div class="welcome-message">
+            <h2>¡Bienvenido!</h2>
+            <p>Haz preguntas sobre los documentos cargados.</p>
+          </div>
+        </div>
+
+        <form class="input-container" id="chat-form">
+          <input
+            id="question-input"
+            placeholder="Escribe tu pregunta..."
+            type="text"
+            autocomplete="off"
+            required
+          />
+          <button id="send-button" type="submit">Enviar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('chat-form');
+    const input = document.getElementById('question-input');
+    const messagesEl = document.getElementById('messages');
+    const sendButton = document.getElementById('send-button');
+
+    const API_URL = '/api/ask-bot'; // servidor intermedio
+
+    function addMessage(text, role = 'user') {
+      const div = document.createElement('div');
+      div.classList.add('message', role);
+
+      const content = document.createElement('div');
+      content.classList.add('message-content');
+      content.textContent = text;
+
+      div.appendChild(content);
+      messagesEl.appendChild(div);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function addTypingIndicator() {
+      const div = document.createElement('div');
+      div.classList.add('message', 'bot');
+      div.id = 'typing-indicator';
+
+      const content = document.createElement('div');
+      content.classList.add('message-content');
+
+      const indicator = document.createElement('div');
+      indicator.classList.add('typing-indicator');
+      indicator.innerHTML = '<span></span><span></span><span></span>';
+
+      content.appendChild(indicator);
+      div.appendChild(content);
+      messagesEl.appendChild(div);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function removeTypingIndicator() {
+      const indicator = document.getElementById('typing-indicator');
+      if (indicator) indicator.remove();
+    }
+
+    async function callAskBot(question) {
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        const msg = data?.error || res.statusText || 'Error en la API';
+        throw new Error(msg);
+      }
+
+      let answerText = '';
+      if (data && data.answer) {
+        answerText = data.answer;
+      } else if (data && data.response) {
+        answerText = data.response;
+      } else if (data && data.message) {
+        answerText = data.message;
+      } else {
+        answerText = 'No se recibió respuesta del asistente.';
+      }
+
+      return answerText;
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const text = input.value.trim();
+      if (!text) return;
+
+      addMessage(text, 'user');
+      input.value = '';
+      input.focus();
+      sendButton.disabled = true;
+      addTypingIndicator();
+
+      try {
+        const answerText = await callAskBot(text);
+        removeTypingIndicator();
+        addMessage(answerText, 'bot');
+      } catch (err) {
+        removeTypingIndicator();
+        addMessage('❌ Error: ' + err.message, 'bot');
+        console.error(err);
+      } finally {
+        sendButton.disabled = false;
+      }
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        form.dispatchEvent(new Event('submit'));
+      }
+    });
+  </script>
+</body>
+</html>

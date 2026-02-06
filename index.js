@@ -17,7 +17,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
 // Rutas HTML (si las tienes)
-app.get('/', (req, res) => {
+app.get('/pd', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'pd.html'));
+});
+
+app.get('/bot', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'bot.html'));
 });
 
